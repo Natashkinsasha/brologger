@@ -29,6 +29,6 @@ export default abstract class Transport extends EventEmitter implements ITranspo
         return this.logger
     }
 
-    public abstract log(level: string, infoObject: object | string): Promise<any>;
+    public abstract log(level: string, ...infoObjects: Array<object | string>): Promise<any>;
 
 }

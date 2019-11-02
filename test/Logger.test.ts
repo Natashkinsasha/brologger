@@ -16,49 +16,49 @@ describe('#Logger', () => {
     describe('#fatal', () => {
         it('1', () => {
             const logger = new Logger();
-            logger.fatal('fatal');
+            logger.fatal('fatal', 'fatal');
         });
     });
 
     describe('#error', () => {
         it('1', () => {
             const logger = new Logger();
-            logger.error('error');
+            logger.error('error', 'error');
         });
     });
 
     describe('#warn', () => {
         it('1', () => {
             const logger = new Logger();
-            logger.warn('warn');
+            logger.warn('warn', 'warn');
         });
     });
 
     describe('#info', () => {
         it('1', () => {
             const logger = new Logger();
-            logger.info('info');
+            logger.info('info', 'info');
         });
     });
 
     describe('#debug', () => {
         it('1', () => {
             const logger = new Logger();
-            logger.debug('debug');
+            logger.debug('debug', 'debug');
         });
     });
 
     describe('#trace', () => {
         it('1', () => {
             const logger = new Logger();
-            logger.trace('trace');
+            logger.trace('trace', 'trace');
         });
     });
 
     describe('#log', () => {
         it('1', () => {
             const logger = new Logger();
-            logger.log('error', 'log');
+            logger.log('error', "log", {log: "log"});
         });
     });
 

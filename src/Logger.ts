@@ -43,42 +43,42 @@ export default class Logger extends EventEmitter{
     }
 
 
-    public trace(infoObject: object | string) {
-        return this.loge('trace', infoObject);
+    public trace(...infoObjects: Array<object | string>) {
+        return this.loge('trace', ...infoObjects);
     }
 
-    public debug(infoObject: object | string) {
-        return this.loge('debug', infoObject);
+    public debug(...infoObjects: Array<object | string>) {
+        return this.loge('debug', ...infoObjects);
     }
 
-    public info(infoObject: object | string) {
-        return this.loge('info', infoObject);
+    public info(...infoObjects: Array<object | string>) {
+        return this.loge('info', ...infoObjects);
     }
 
-    public warn(infoObject: object | string) {
-        return this.loge('warn', infoObject);
+    public warn(...infoObjects: Array<object | string>) {
+        return this.loge('warn', ...infoObjects);
     }
 
-    public error(infoObject: object | string) {
-        return this.loge('error', infoObject);
+    public error(...infoObjects: Array<object | string>) {
+        return this.loge('error', ...infoObjects);
     }
 
-    public fatal(infoObject: object | string) {
-        return this.loge('fatal', infoObject);
+    public fatal(...infoObjects: Array<object | string>) {
+        return this.loge('fatal', ...infoObjects);
     }
 
-    public log(level: string, infoObject: object | string) {
-        return this.loge(level, infoObject);
+    public log(level: string, ...infoObjects: Array<object | string>) {
+        return this.loge(level, ...infoObjects);
     }
 
 
-    private loge(level: string, infoObject: object | string) {
+    private loge(level: string, ...infoObjects: Array<object | string>) {
         return this.transports.forEach((transport) => {
             const transportLevel = transport.getLogLevel();
             const logLevelValue = transportLevel && Logger.getLevelValue(this.levels, transportLevel) || this.logLevelValue;
             const levelValue = Logger.getLevelValue(this.levels, level);
             if(logLevelValue >= levelValue){
-                transport.log(level, infoObject)
+                transport.log(level, ...infoObjects)
                     .catch((err: Error)=>{
                         this.emit('error', err);
                     });

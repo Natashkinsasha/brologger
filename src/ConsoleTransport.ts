@@ -27,8 +27,11 @@ export default class ConsoleTransport extends Transport {
         this.colors = options && options.colors || colors;
     }
 
-    public async log(level: string, infoObject: object): Promise<any> {
-        console.log(this.getColorMessageByLevel(`${new Date().toISOString()} - ${level}: ${util.inspect(infoObject)}`, level));
+    public async log(level: string, ...infoObjects: Array<object | string>): Promise<any> {
+        const message = infoObjects.reduce((message: string, infoObject: object | string, index)=>{
+            return message.concat(" ").concat(util.inspect(infoObject));
+        }, '');
+        console.log(this.getColorMessageByLevel(`${new Date().toISOString()} - ${level}: ${message}`, level));
     }
 
     protected getColorMessageByLevel(message: string, level: string){
