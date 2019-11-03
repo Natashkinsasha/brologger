@@ -5,7 +5,8 @@ export default interface ITransport {
 
     getLogLevel(): string | undefined;
 
-    log(level: string, ...infoObjects: Array<object | string>): Promise<any>;
+
+    log(level: string, message?: string, infoObject?: object, meta?: object): Promise<any>;
 
     setLogger(logger: Logger): void;
 }

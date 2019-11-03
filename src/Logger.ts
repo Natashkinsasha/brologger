@@ -1,6 +1,9 @@
 import ITransport from './ITransport';
 import ConsoleTransport from "./ConsoleTransport";
 import {EventEmitter} from "events";
+import ILogger from "./ILogger";
+import ILog from "./ILog";
+import Log from "./Log";
 
 
 const defaultLevels = {
@@ -17,93 +20,76 @@ export interface Levels {
 }
 
 export interface LoggerOptions {
-    transports: ReadonlyArray<ITransport>;
+    transports?: ReadonlyArray<ITransport>;
     level?: string;
     levels?: Levels;
+    meta?: object;
 }
 
-export default class Logger extends EventEmitter{
+export default class Logger extends EventEmitter implements ILogger {
+
     private readonly transports: ReadonlyArray<ITransport>;
     private readonly logLevelValue: number;
     private readonly levels: Levels;
+    private readonly metaObject?: object;
 
     constructor(options?: LoggerOptions) {
         super();
         this.levels = options && options.levels || defaultLevels;
+        this.metaObject = options && options.meta;
         const level = Logger.getLogLevel(this.levels, options && options.level);
         this.logLevelValue = Logger.getLevelValue(this.levels, level);
         this.transports = options && options.transports || [new ConsoleTransport()];
-        this.transports.forEach((transport)=>{
+        this.transports.forEach((transport) => {
             transport.setLogger(this);
         });
     }
 
-    public getLevels(){
-        return this.levels;
+    public message(message: string): ILog {
+        return new Log(this, {message});
+    }
+
+    public meta(meta: object): ILog {
+        return new Log(this, {meta});
+    }
+
+    public object(object: object): ILog {
+        return new Log(this, {object});
     }
 
 
-    public trace(...infoObjects: Array<object | string>) {
-        return this.loge('trace', ...infoObjects);
-    }
-
-    public debug(...infoObjects: Array<object | string>) {
-        return this.loge('debug', ...infoObjects);
-    }
-
-    public info(...infoObjects: Array<object | string>) {
-        return this.loge('info', ...infoObjects);
-    }
-
-    public warn(...infoObjects: Array<object | string>) {
-        return this.loge('warn', ...infoObjects);
-    }
-
-    public error(...infoObjects: Array<object | string>) {
-        return this.loge('error', ...infoObjects);
-    }
-
-    public fatal(...infoObjects: Array<object | string>) {
-        return this.loge('fatal', ...infoObjects);
-    }
-
-    public log(level: string, ...infoObjects: Array<object | string>) {
-        return this.loge(level, ...infoObjects);
-    }
-
-
-    private loge(level: string, ...infoObjects: Array<object | string>) {
+    public log(level: string, message?: string, infoObject?: object, meta?: object) {
         return this.transports.forEach((transport) => {
             const transportLevel = transport.getLogLevel();
             const logLevelValue = transportLevel && Logger.getLevelValue(this.levels, transportLevel) || this.logLevelValue;
             const levelValue = Logger.getLevelValue(this.levels, level);
-            if(logLevelValue >= levelValue){
-                transport.log(level, ...infoObjects)
-                    .catch((err: Error)=>{
+            if (logLevelValue >= levelValue) {
+                transport.log(level, message, infoObject, (meta || this.metaObject) && {...this.metaObject, ...meta})
+                    .catch((err: Error) => {
                         this.emit('error', err);
                     });
             }
         });
     }
 
-    private static getLogLevel(levels: Levels, level?: string){
-        if(level){
+    private static getLogLevel(levels: Levels, level?: string) {
+        if (level) {
             return level;
         }
         const levelKeys = Object.keys(levels);
         if (levelKeys.length === 0) {
             throw new Error('Logger levels is empty.');
         }
-        const logLevel =  levelKeys[0];
-        if(!logLevel){
+        const logLevel = levelKeys[0];
+        if (!logLevel) {
             throw new Error('Logger levels is empty.');
         }
         return logLevel;
     }
 
-    private static getLevelValue(levels: Levels, level: string){
+    private static getLevelValue(levels: Levels, level: string) {
         const levelValue = levels[level];
-        if(!Number.isInteger(levelValue)){
+        if (!Number.isInteger(levelValue)) {
             throw new Error('Can not choose log level');
         }
         return levelValue;

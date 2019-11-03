@@ -14,7 +14,7 @@ export interface Colors {
     [key: string]: string;
 }
 
-export interface ConsoleTransportOptions extends TransportOptions{
+export interface ConsoleTransportOptions extends TransportOptions {
     colors?: Colors;
 }
 
@@ -22,19 +22,13 @@ export default class ConsoleTransport extends Transport {
 
     private readonly colors: Colors;
 
-    constructor(options?: Partial<ConsoleTransportOptions>){
+    constructor(options?: Partial<ConsoleTransportOptions>) {
         super(options);
         this.colors = options && options.colors || colors;
     }
 
-    public async log(level: string, ...infoObjects: Array<object | string>): Promise<any> {
-        const message = infoObjects.reduce((message: string, infoObject: object | string, index)=>{
-            return message.concat(" ").concat(util.inspect(infoObject));
-        }, '');
-        console.log(this.getColorMessageByLevel(`${new Date().toISOString()} - ${level}: ${message}`, level));
-    }
 
-    protected getColorMessageByLevel(message: string, level: string){
+    protected getColorMessageByLevel(message: string, level: string) {
         try {
             const color = this.colors[level];
             return chalk.keyword(color)(message);
@@ -42,5 +36,24 @@ export default class ConsoleTransport extends Transport {
             return message;
         }
     }
+
+    public async log(level: string, message?: string, infoObject?: object, meta?: object): Promise<any> {
+        let msg = '';
+        if(meta){
+            msg = msg.concat(`[${util.inspect(meta)}] `)
+        }
+        msg = msg.concat(`${new Date().toISOString()} - ${this.getColorMessageByLevel(level, level)}: `);
+        if(message){
+            msg = msg.concat(`${message} `)
+        }
+        if(message && infoObject){
+            msg = msg.concat(`| `)
+        }
+        if(infoObject){
+            msg = msg.concat(`${util.inspect(infoObject)}`)
+        }
+        console.log(msg);
+    }
+
 
 }

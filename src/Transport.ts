@@ -4,6 +4,7 @@ import Logger from "./Logger";
 
 export interface TransportOptions {
     level?: string;
+    meta?: object;
 }
 
 
@@ -29,6 +30,6 @@ export default abstract class Transport extends EventEmitter implements ITranspo
         return this.logger
     }
 
-    public abstract log(level: string, ...infoObjects: Array<object | string>): Promise<any>;
+    public abstract log(level: string, message?: string, infoObject?: object, meta?: object): Promise<any>;
 
 }
