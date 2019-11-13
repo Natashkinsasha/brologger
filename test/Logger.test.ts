@@ -30,14 +30,14 @@ describe('#Logger', () => {
     describe('#warn', () => {
         it('1', () => {
             const logger = new Logger({meta: {NODE_ENV: 'localhost'}});
-            logger.message('warn').meta( {NODE_ENV: 'localhost', file: 'test.ts'}).object({test: 'test'}).warn();
+            logger.message('warn').meta({NODE_ENV: 'localhost', file: 'test.ts'}).object({test: 'test'}).warn();
         });
     });
 
     describe('#info', () => {
         it('1', () => {
             const logger = new Logger();
-            logger.object({info: 'info'}).info();
+            logger.object({info: {info: {info: {info: "info"}}}, info2: {info: {info: {info: {info: "info"}}}}}).info();
         });
     });
 

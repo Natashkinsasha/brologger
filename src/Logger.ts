@@ -59,17 +59,23 @@ export default class Logger extends EventEmitter implements ILogger {
 
 
     public log(level: string, message?: string, infoObject?: object, meta?: object) {
-        return this.transports.forEach((transport) => {
-            const transportLevel = transport.getLogLevel();
-            const logLevelValue = transportLevel && Logger.getLevelValue(this.levels, transportLevel) || this.logLevelValue;
-            const levelValue = Logger.getLevelValue(this.levels, level);
-            if (logLevelValue >= levelValue) {
-                transport.log(level, message, infoObject, (meta || this.metaObject) && {...this.metaObject, ...meta})
-                    .catch((err: Error) => {
-                        this.emit('error', err);
-                    });
-            }
-        });
+        Promise
+            .all(
+                this.transports.map((transport) => {
+                    return Promise.resolve()
+                        .then(async () => {
+                            const transportLevel = transport.getLogLevel();
+                            const logLevelValue = transportLevel && Logger.getLevelValue(this.levels, transportLevel) || this.logLevelValue;
+                            const levelValue = Logger.getLevelValue(this.levels, level);
+                            if (logLevelValue >= levelValue) {
+                                await transport.log(level, message, infoObject, (meta || this.metaObject) && {...this.metaObject, ...meta})
+                            }
+                        })
+                        .catch((err: Error) => {
+                            this.emit('error', err);
+                        });
+                })
+            );
     }
 
     private static getLogLevel(levels: Levels, level?: string) {

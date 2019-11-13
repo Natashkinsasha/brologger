@@ -40,17 +40,17 @@ export default class ConsoleTransport extends Transport {
     public async log(level: string, message?: string, infoObject?: object, meta?: object): Promise<any> {
         let msg = '';
         if(meta){
-            msg = msg.concat(`[${util.inspect(meta)}] `)
+            msg = msg.concat(`[${util.inspect(meta, {depth: null, breakLength: Infinity})}] `)
         }
         msg = msg.concat(`${new Date().toISOString()} - ${this.getColorMessageByLevel(level, level)}: `);
         if(message){
             msg = msg.concat(`${message} `)
         }
         if(message && infoObject){
-            msg = msg.concat(`| `)
+            msg = msg.concat(`\n`)
         }
         if(infoObject){
-            msg = msg.concat(`${util.inspect(infoObject)}`)
+            msg = msg.concat(`${util.inspect(infoObject, {depth: null, breakLength: Infinity, compact: false})}`)
         }
         console.log(msg);
     }
