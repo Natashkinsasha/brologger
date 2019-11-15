@@ -1,5 +1,5 @@
 import * as chai from 'chai';
-import {Logger} from '../src/index'
+import Logger from '../src/index'
 
 
 describe('#Logger', () => {
