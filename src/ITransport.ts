@@ -9,4 +9,7 @@ export default interface ITransport {
     log(level: string, message?: string, infoObject?: object, meta?: object): Promise<any>;
 
     setLogger(logger: Logger): void;
+
+
+    initialize(): Promise<any>
 }

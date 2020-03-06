@@ -78,6 +78,15 @@ export default class Logger extends EventEmitter implements ILogger {
             );
     }
 
+    public initialize() {
+        return Promise
+            .all(
+                this.transports.map((transport) => {
+                    return transport.initialize();
+                })
+            );
+    }
+
     private static getLogLevel(levels: Levels, level?: string) {
         if (level) {
             return level;
