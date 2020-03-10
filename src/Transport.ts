@@ -32,7 +32,7 @@ export default abstract class Transport extends EventEmitter implements ITranspo
 
     public abstract log(level: string, message?: string, infoObject?: object, meta?: object): Promise<any>;
 
-    public initialize() {
+    public initialize(): Promise<any> {
         return Promise.resolve();
     }
 

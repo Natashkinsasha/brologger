@@ -32,6 +32,7 @@ export default class Logger extends EventEmitter implements ILogger {
     private readonly logLevelValue: number;
     private readonly levels: Levels;
     private readonly metaObject?: object;
+    private task: Promise<void> = Promise.resolve();
 
     constructor(options?: LoggerOptions) {
         super();
@@ -43,6 +44,10 @@ export default class Logger extends EventEmitter implements ILogger {
         this.transports.forEach((transport) => {
             transport.setLogger(this);
         });
+        this.task = Promise.resolve()
+            .then(async () => {
+                await this.initialize()
+            });
     }
 
     public message(message: string): ILog {
@@ -57,34 +62,38 @@ export default class Logger extends EventEmitter implements ILogger {
         return new Log(this, {object});
     }
 
-
-    public log(level: string, message?: string, infoObject?: object, meta?: object) {
-        Promise
-            .all(
-                this.transports.map((transport) => {
-                    return Promise.resolve()
-                        .then(async () => {
-                            const transportLevel = transport.getLogLevel();
-                            const logLevelValue = transportLevel && Logger.getLevelValue(this.levels, transportLevel) || this.logLevelValue;
-                            const levelValue = Logger.getLevelValue(this.levels, level);
-                            if (logLevelValue >= levelValue) {
-                                await transport.log(level, message, infoObject, (meta || this.metaObject) && {...this.metaObject, ...meta})
-                            }
-                        })
-                        .catch((err: Error) => {
-                            this.emit('error', err);
-                        });
-                })
-            );
-    }
-
-    public initialize() {
+    public initialize(): Promise<any[]> {
         return Promise
             .all(
                 this.transports.map((transport) => {
                     return transport.initialize();
                 })
             );
+    }
+
+    public async log(level: string, message?: string, infoObject?: object, meta?: object): Promise<void> {
+        const tasks: Array<() => Promise<void>> = this.transports.map((transport) => {
+            return () => Promise.resolve()
+                .then(async () => {
+                    const transportLevel = transport.getLogLevel();
+                    const logLevelValue = transportLevel && Logger.getLevelValue(this.levels, transportLevel) || this.logLevelValue;
+                    const levelValue = Logger.getLevelValue(this.levels, level);
+                    if (logLevelValue >= levelValue) {
+                        await transport.log(level, message, infoObject, (meta || this.metaObject) && {...this.metaObject, ...meta})
+                    }
+                })
+                .catch((err: Error) => {
+                    this.emit('error', err);
+                });
+        });
+        await this.execute(() => Promise.resolve().then(async () => {
+            await Promise.all(tasks.map((task) => (task())))
+        }));
+    }
+
+    private execute(task: () => Promise<void>): Promise<void> {
+        this.task = this.task.then(() => task(), () => task());
+        return this.task;
     }
 
     private static getLogLevel(levels: Levels, level?: string) {
