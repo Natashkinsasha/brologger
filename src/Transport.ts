@@ -14,9 +14,11 @@ export default abstract class Transport extends EventEmitter implements ITranspo
     private logLevelValue?: number;
     private logLevelsValues?: ReadonlyArray<number>;
     private logger?: Logger;
+    private opt?: TransportOptions
 
-    protected constructor(private readonly options?: TransportOptions) {
+    protected constructor(options?: TransportOptions) {
         super();
+        this.opt = options;
     }
 
     public getLogLevelValue(): number | undefined {
@@ -29,11 +31,11 @@ export default abstract class Transport extends EventEmitter implements ITranspo
 
     public setLogger(logger: Logger) {
         this.logger = logger;
-        if(this.options?.logLevel){
-            this.logLevelValue = Logger.getLevelValue(logger.getLevels(), this.options.logLevel)
+        if(this.opt?.logLevel){
+            this.logLevelValue = Logger.getLevelValue(logger.getLevels(), this.opt.logLevel)
         }
-        if(this.options?.logLevels){
-            this.logLevelsValues = Logger.getLevelsValues(logger.getLevels(), this.options.logLevels)
+        if(this.opt?.logLevels){
+            this.logLevelsValues = Logger.getLevelsValues(logger.getLevels(), this.opt.logLevels)
         }
     }
 
