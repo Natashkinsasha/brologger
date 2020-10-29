@@ -3,37 +3,48 @@ import {EventEmitter} from "events";
 import Logger from "./Logger";
 
 export interface TransportOptions {
-    level?: string;
+    logLevel?: string;
+    logLevels?: ReadonlyArray<string>;
     meta?: object;
 }
 
 
 export default abstract class Transport extends EventEmitter implements ITransport {
 
-    private readonly level?: string;
+    private logLevelValue?: number;
+    private logLevelsValues?: ReadonlyArray<number>;
     private logger?: Logger;
 
-    protected constructor(options?: TransportOptions) {
+    protected constructor(private readonly options?: TransportOptions) {
         super();
-        this.level = options && options.level;
     }
 
-    public getLogLevel(): string | undefined {
-        return this.level;
+    public getLogLevelValue(): number | undefined {
+        return this.logLevelValue;
+    }
+
+    public getLogLevelsValues(): ReadonlyArray<number> | undefined {
+        return this.logLevelsValues;
     }
 
     public setLogger(logger: Logger) {
         this.logger = logger;
+        if(this.options?.logLevel){
+            this.logLevelValue = Logger.getLevelValue(logger.getLevels(), this.options.logLevel)
+        }
+        if(this.options?.logLevels){
+            this.logLevelsValues = Logger.getLevelsValues(logger.getLevels(), this.options.logLevels)
+        }
     }
 
     protected getLogger() {
         return this.logger
     }
 
-    public abstract log(level: string, message?: string, infoObject?: object, meta?: object): Promise<any>;
+    public abstract log(level: string, message?: string, infoObject?: object, meta?: object): Promise<void>;
 
-    public initialize(): Promise<any> {
-        return Promise.resolve();
+    public async initialize(): Promise<void> {
+        return;
     }
 
 }

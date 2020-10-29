@@ -37,7 +37,7 @@ export default class ConsoleTransport extends Transport {
         }
     }
 
-    public async log(level: string, message?: string, infoObject?: object, meta?: object): Promise<any> {
+    public async log(level: string, message?: string, infoObject?: object, meta?: object): Promise<void> {
         let msg = '';
         if(meta){
             msg = msg.concat(`[${util.inspect(meta, {depth: null, breakLength: Infinity})}] `)

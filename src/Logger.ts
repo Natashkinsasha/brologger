@@ -21,7 +21,8 @@ export interface Levels {
 
 export interface LoggerOptions {
     transports?: ReadonlyArray<ITransport>;
-    level?: string;
+    logLevel?: string;
+    logLevels?: ReadonlyArray<string>;
     levels?: Levels;
     meta?: object;
 }
@@ -30,23 +31,34 @@ export default class Logger extends EventEmitter implements ILogger {
 
     private readonly transports: ReadonlyArray<ITransport>;
     private readonly logLevelValue: number;
+    private readonly logLevelsValues?: ReadonlyArray<number>;
     private readonly levels: Levels;
     private readonly metaObject?: object;
     private task: Promise<void> = Promise.resolve();
 
     constructor(options?: LoggerOptions) {
         super();
-        this.levels = options && options.levels || defaultLevels;
-        this.metaObject = options && options.meta;
-        const level = Logger.getLogLevel(this.levels, options && options.level);
+        this.levels = options?.levels || defaultLevels;
+        this.metaObject = options?.meta;
+        if(options?.logLevel && options?.logLevels){
+            throw new Error('Options logLevel and logLevels can not be configured in one time');
+        }
+        const level = Logger.getLogLevel(this.levels, options?.logLevel);
         this.logLevelValue = Logger.getLevelValue(this.levels, level);
-        this.transports = options && options.transports || [new ConsoleTransport()];
+        if(options?.logLevels){
+            this.logLevelsValues = Logger.getLevelsValues(this.levels, options?.logLevels)
+        }
+        this.transports = options?.transports || [new ConsoleTransport()];
         this.transports.forEach((transport) => {
             transport.setLogger(this);
         });
         this.task = Promise.resolve()
             .then(async () => {
                 await this.initialize()
+                    .catch((err)=>{
+                        this.emit('error', err);
+                        throw err;
+                    });
             });
     }
 
@@ -62,41 +74,65 @@ export default class Logger extends EventEmitter implements ILogger {
         return new Log(this, {object});
     }
 
-    public initialize(): Promise<any[]> {
-        return Promise
+    public getLevels(){
+        return this.levels;
+    }
+
+
+    private async initialize(): Promise<void> {
+        await Promise
             .all(
                 this.transports.map((transport) => {
                     return transport.initialize();
                 })
             );
+
     }
 
     public async log(level: string, message?: string, infoObject?: object, meta?: object): Promise<void> {
-        const tasks: Array<() => Promise<void>> = this.transports.map((transport) => {
-            return () => Promise.resolve()
-                .then(async () => {
-                    const transportLevel = transport.getLogLevel();
-                    const logLevelValue = transportLevel && Logger.getLevelValue(this.levels, transportLevel) || this.logLevelValue;
-                    const levelValue = Logger.getLevelValue(this.levels, level);
-                    if (logLevelValue >= levelValue) {
-                        await transport.log(level, message, infoObject, (meta || this.metaObject) && {...this.metaObject, ...meta})
-                    }
-                })
-                .catch((err: Error) => {
-                    this.emit('error', err);
-                });
+        const tasks = this.transports.map((transport) => {
+            return () => this.transportLog(transport, level, message, infoObject, meta);
         });
-        await this.execute(() => Promise.resolve().then(async () => {
-            await Promise.all(tasks.map((task) => (task())))
-        }));
+        await this.execute(() => Promise.all(tasks.map((task)=>(task()))));
     }
 
-    private execute(task: () => Promise<void>): Promise<void> {
+    private async transportLog(transport: ITransport, level: string, message?: string, infoObject?: object, meta?: object): Promise<void>{
+        try{
+            const levelValue = Logger.getLevelValue(this.levels, level);
+            const transportLogLevelsValues = transport.getLogLevelsValues();
+            if(transportLogLevelsValues){
+                if(transportLogLevelsValues.includes(levelValue)){
+                    return transport.log(level, message, infoObject, (meta || this.metaObject) && {...this.metaObject, ...meta})
+                }
+                return;
+            }
+            const transportLogLevelValue = transport.getLogLevelValue();
+            if(transportLogLevelValue){
+                if (transportLogLevelValue >= levelValue) {
+                    return transport.log(level, message, infoObject, (meta || this.metaObject) && {...this.metaObject, ...meta})
+                }
+                return;
+            }
+            if(this.logLevelsValues){
+                if(this.logLevelsValues.includes(levelValue)){
+                    return transport.log(level, message, infoObject, (meta || this.metaObject) && {...this.metaObject, ...meta})
+                }
+                return;
+            }
+            if (this.logLevelValue >= levelValue) {
+                return transport.log(level, message, infoObject, (meta || this.metaObject) && {...this.metaObject, ...meta})
+            }
+        } catch (err) {
+            this.emit('error', err);
+        }
+    }
+
+    private execute(task: () => Promise<any>): Promise<void> {
         this.task = this.task.then(() => task(), () => task());
         return this.task;
     }
 
-    private static getLogLevel(levels: Levels, level?: string) {
+    public static getLogLevel(levels: Levels, level?: string) {
         if (level) {
             return level;
         }
@@ -111,11 +147,17 @@ export default class Logger extends EventEmitter implements ILogger {
         return logLevel;
     }
 
-    private static getLevelValue(levels: Levels, level: string) {
+    public static getLevelValue(levels: Levels, level: string) {
         const levelValue = levels[level];
         if (!Number.isInteger(levelValue)) {
             throw new Error('Can not choose log level');
         }
         return levelValue;
+    }
+
+    public static getLevelsValues(levels: Levels, logLevels: ReadonlyArray<string>) {
+        return logLevels.map((logLevel)=>{
+            return Logger.getLevelValue(levels, logLevel);
+        })
     }
 }

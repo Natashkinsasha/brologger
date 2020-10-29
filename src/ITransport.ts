@@ -3,13 +3,14 @@ import Logger from "./Logger";
 
 export default interface ITransport {
 
-    getLogLevel(): string | undefined;
+    getLogLevelValue(): number | undefined;
 
+    getLogLevelsValues(): ReadonlyArray<number> | undefined;
 
-    log(level: string, message?: string, infoObject?: object, meta?: object): Promise<any>;
+    log(level: string, message?: string, infoObject?: object, meta?: object): Promise<void>;
 
     setLogger(logger: Logger): void;
 
 
-    initialize(): Promise<any>
+    initialize(): Promise<void>
 }
