@@ -11,6 +11,7 @@ export default interface ITransport {
 
     setLogger(logger: Logger): void;
 
+    getMeta(): object | undefined;
 
     initialize(): Promise<void>
 }

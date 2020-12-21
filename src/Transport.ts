@@ -16,9 +16,13 @@ export default abstract class Transport extends EventEmitter implements ITranspo
     private logger?: Logger;
     private opt?: TransportOptions
 
-    protected constructor(options?: TransportOptions) {
+    constructor(options?: TransportOptions) {
         super();
         this.opt = options;
+    }
+
+    public getMeta() {
+        return this.opt?.meta;
     }
 
     public getLogLevelValue(): number | undefined {
@@ -40,6 +44,9 @@ export default abstract class Transport extends EventEmitter implements ITranspo
     }
 
     protected getLogger() {
+        if(!this.logger){
+            throw new Error('Error: there is no logger in the transport')
+        }
         return this.logger
     }
 

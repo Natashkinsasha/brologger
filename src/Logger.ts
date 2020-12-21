@@ -1,9 +1,10 @@
-import ITransport from './ITransport';
+import Transport from './Transport';
 import ConsoleTransport from "./ConsoleTransport";
 import {EventEmitter} from "events";
 import ILogger from "./ILogger";
 import ILog from "./ILog";
 import Log from "./Log";
+import Ack from "./Ack";
 
 
 const defaultLevels = {
@@ -20,7 +21,7 @@ export interface Levels {
 }
 
 export interface LoggerOptions {
-    transports?: ReadonlyArray<ITransport>;
+    transports?: ReadonlyArray<Transport>;
     logLevel?: string;
     logLevels?: ReadonlyArray<string>;
     levels?: Levels;
@@ -29,7 +30,7 @@ export interface LoggerOptions {
 
 export default class Logger extends EventEmitter implements ILogger {
 
-    private readonly transports: ReadonlyArray<ITransport>;
+    private readonly transports: ReadonlyArray<Transport>;
     private readonly logLevelValue: number;
     private readonly logLevelsValues?: ReadonlyArray<number>;
     private readonly levels: Levels;
@@ -55,10 +56,6 @@ export default class Logger extends EventEmitter implements ILogger {
         this.task = Promise.resolve()
             .then(async () => {
                 await this.initialize()
-                    .catch((err)=>{
-                        this.emit('error', err);
-                        throw err;
-                    });
             });
     }
 
@@ -83,48 +80,65 @@ export default class Logger extends EventEmitter implements ILogger {
         await Promise
             .all(
                 this.transports.map((transport) => {
-                    return transport.initialize();
+                    return transport
+                        .initialize()
+                        .catch((err)=>{
+                            if(transport.listeners('error').length){
+                                transport.emit('error', err);
+                            } else{
+                                this.emit('error', err);
+                            }
+                        });
                 })
             );
 
     }
 
-    public async log(level: string, message?: string, infoObject?: object, meta?: object): Promise<void> {
+    public log(level: string, message?: string, infoObject?: object, meta?: object): Ack {
         const tasks = this.transports.map((transport) => {
             return () => this.transportLog(transport, level, message, infoObject, meta);
         });
-        await this.execute(() => Promise.all(tasks.map((task)=>(task()))));
+        return new Ack(this.execute(() => Promise.all(tasks.map((task)=>(task())))));
     }
 
-    private async transportLog(transport: ITransport, level: string, message?: string, infoObject?: object, meta?: object): Promise<void>{
-        try{
-            const levelValue = Logger.getLevelValue(this.levels, level);
-            const transportLogLevelsValues = transport.getLogLevelsValues();
-            if(transportLogLevelsValues){
-                if(transportLogLevelsValues.includes(levelValue)){
-                    return transport.log(level, message, infoObject, (meta || this.metaObject) && {...this.metaObject, ...meta})
+    private async transportLog(transport: Transport, level: string, message?: string, infoObject?: object, meta?: object): Promise<void>{
+        return Promise.resolve()
+            .then(()=>{
+                const levelValue = Logger.getLevelValue(this.levels, level);
+                const transportLogLevelsValues = transport.getLogLevelsValues();
+                const transportMeta = transport.getMeta();
+                const metaObject = (meta || this.metaObject || transportMeta) && {...this.metaObject, ...transportMeta, ...meta};
+                if(transportLogLevelsValues){
+                    if(transportLogLevelsValues.includes(levelValue)){
+                        return transport.log(level, message, infoObject, metaObject);
+                    }
+                    return;
+                }
+                const transportLogLevelValue = transport.getLogLevelValue();
+                if(transportLogLevelValue){
+                    if (transportLogLevelValue >= levelValue) {
+                        return transport.log(level, message, infoObject, metaObject)
+                    }
+                    return;
+                }
+                if(this.logLevelsValues){
+                    if(this.logLevelsValues.includes(levelValue)){
+                        return transport.log(level, message, infoObject, metaObject)
+                    }
+                    return;
+                }
+                if (this.logLevelValue >= levelValue) {
+                    return transport.log(level, message, infoObject, metaObject)
                 }
                 return;
-            }
-            const transportLogLevelValue = transport.getLogLevelValue();
-            if(transportLogLevelValue){
-                if (transportLogLevelValue >= levelValue) {
-                    return transport.log(level, message, infoObject, (meta || this.metaObject) && {...this.metaObject, ...meta})
+            })
+            .catch((err)=>{
+                if(transport.listeners('error').length){
+                    transport.emit('error', err);
+                } else{
+                    this.emit('error', err);
                 }
-                return;
-            }
-            if(this.logLevelsValues){
-                if(this.logLevelsValues.includes(levelValue)){
-                    return transport.log(level, message, infoObject, (meta || this.metaObject) && {...this.metaObject, ...meta})
-                }
-                return;
-            }
-            if (this.logLevelValue >= levelValue) {
-                return transport.log(level, message, infoObject, (meta || this.metaObject) && {...this.metaObject, ...meta})
-            }
-        } catch (err) {
-            this.emit('error', err);
-        }
+            });
     }
 
     private execute(task: () => Promise<any>): Promise<void> {

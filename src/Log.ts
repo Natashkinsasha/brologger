@@ -1,5 +1,6 @@
 import ILog from "./ILog";
 import ILogger from "./ILogger";
+import Ack from "./Ack";
 
 
 export default class Log implements ILog {
@@ -16,31 +17,31 @@ export default class Log implements ILog {
         this.infoObject = object;
     }
 
-    public debug(): Promise<void> {
+    public debug(): Ack {
         return this.logger.log('debug', this.msg, this.infoObject, this.metaObject)
     }
 
-    public error(): Promise<void> {
+    public error(): Ack {
         return this.logger.log('error', this.msg, this.infoObject, this.metaObject)
     }
 
-    public fatal(): Promise<void> {
+    public fatal(): Ack {
         return this.logger.log('fatal', this.msg, this.infoObject, this.metaObject)
     }
 
-    public info(): Promise<void> {
+    public info(): Ack {
         return this.logger.log('info', this.msg, this.infoObject, this.metaObject)
     }
 
-    public trace(): Promise<void> {
+    public trace(): Ack {
         return this.logger.log('trace', this.msg, this.infoObject, this.metaObject)
     }
 
-    public warn(): Promise<void> {
+    public warn(): Ack {
         return this.logger.log('warn', this.msg, this.infoObject, this.metaObject)
     }
 
-    public log(level: string): Promise<void> {
+    public log(level: string): Ack {
         return this.logger.log(level, this.msg, this.infoObject, this.metaObject)
     }
 
