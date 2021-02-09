@@ -1,6 +1,7 @@
 import ILog from "./ILog";
 import ILogger from "./ILogger";
 import Ack from "./Ack";
+import Stack from "./Stack";
 
 
 export default class Log implements ILog {

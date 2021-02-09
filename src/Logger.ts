@@ -5,6 +5,7 @@ import ILogger from "./ILogger";
 import ILog from "./ILog";
 import Log from "./Log";
 import Ack from "./Ack";
+import Stack from "./Stack";
 
 
 const defaultLevels = {
@@ -26,6 +27,7 @@ export interface LoggerOptions {
     logLevels?: ReadonlyArray<string>;
     levels?: Levels;
     meta?: object;
+    source?: boolean;
 }
 
 export default class Logger extends EventEmitter implements ILogger {
@@ -35,12 +37,14 @@ export default class Logger extends EventEmitter implements ILogger {
     private readonly logLevelsValues?: ReadonlyArray<number>;
     private readonly levels: Levels;
     private readonly metaObject?: object;
+    private readonly source: boolean;
     private task: Promise<void> = Promise.resolve();
 
     constructor(options?: LoggerOptions) {
         super();
         this.levels = options?.levels || defaultLevels;
         this.metaObject = options?.meta;
+        this.source = options?.source || false;
         if(options?.logLevel && options?.logLevels){
             throw new Error('Options logLevel and logLevels can not be configured in one time');
         }
@@ -95,10 +99,23 @@ export default class Logger extends EventEmitter implements ILogger {
     }
 
     public log(level: string, message?: string, infoObject?: object, meta?: object): Ack {
+        const newMeta = this.getMeta(meta);
         const tasks = this.transports.map((transport) => {
-            return () => this.transportLog(transport, level, message, infoObject, meta);
+            return () => this.transportLog(transport, level, message, infoObject, newMeta);
         });
         return new Ack(this.execute(() => Promise.all(tasks.map((task)=>(task())))));
+    }
+
+    private getMeta(meta?: object){
+        if(this.source){
+            const items = Stack.get(this.log);
+            const item = items[1];
+            const source = item && item.toString();
+            if(source){
+                return {...meta, source};
+            }
+        }
+        return meta;
     }
 
     private async transportLog(transport: Transport, level: string, message?: string, infoObject?: object, meta?: object): Promise<void>{

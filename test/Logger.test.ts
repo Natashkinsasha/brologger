@@ -9,28 +9,28 @@ describe('#Logger', () => {
     describe('#new Logger()', ()=>{
         describe('#new', () => {
             it('1', () => {
-                const logger = new Logger();
+                const logger = new Logger({source: true});
                 expect(logger).to.be.a('object');
             });
         });
 
         describe('#fatal', () => {
             it('1', async () => {
-                const logger = new Logger();
+                const logger = new Logger({source: true});
                 await logger.message('fatal').meta({NODE_ENV: 'test'}).fatal().get();
             });
         });
 
         describe('#error', () => {
             it('1', async () => {
-                const logger = new Logger();
+                const logger = new Logger({source: true});
                 await logger.message('error').meta({NODE_ENV: 'test'}).object({test: 'test'}).error().get();
             });
         });
 
         describe('#warn', () => {
             it('1', async () => {
-                const logger = new Logger({meta: {NODE_ENV: 'localhost'}});
+                const logger = new Logger({meta: {NODE_ENV: 'localhost'}, source: true});
                 await logger.message('warn').meta({NODE_ENV: 'localhost', file: 'test.ts'}).object({test: 'test'}).warn().get();
             });
         });
