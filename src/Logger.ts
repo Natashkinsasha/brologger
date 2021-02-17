@@ -125,14 +125,14 @@ export default class Logger extends EventEmitter implements ILogger {
                 const transportLogLevelsValues = transport.getLogLevelsValues();
                 const transportMeta = transport.getMeta();
                 const metaObject = (meta || this.metaObject || transportMeta) && {...this.metaObject, ...transportMeta, ...meta};
+                const transportLogLevelValue = transport.getLogLevelValue();
                 if(transportLogLevelsValues){
                     if(transportLogLevelsValues.includes(levelValue)){
                         return transport.log(level, message, infoObject, metaObject);
                     }
                     return;
                 }
-                const transportLogLevelValue = transport.getLogLevelValue();
-                if(transportLogLevelValue){
+                if(transportLogLevelValue || transportLogLevelValue === 0){
                     if (transportLogLevelValue >= levelValue) {
                         return transport.log(level, message, infoObject, metaObject)
                     }

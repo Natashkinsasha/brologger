@@ -1,6 +1,6 @@
 {
   "name": "brologger",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "description": "",
   "main": "./build/index.js",
   "types": "./build/index.d.ts",
@@ -9,8 +9,16 @@
     "start": "ts-node-dev -r tsconfig-paths/register src/index.ts",
     "test": "mocha test/**/*.ts --full-stack"
   },
-  "author": "",
+  "author": "Alex Natashkin <natashkinsasha@gmail.com>",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Natashkinsasha/brologger"
+  },
+  "bugs": {
+    "url": "https://github.com/Natashkinsasha/brologger/issues",
+    "email": "natashkinsasha@gmail.com"
+  },
   "devDependencies": {
     "@types/chai": "^4.2.4",
     "@types/mocha": "^5.2.7",
